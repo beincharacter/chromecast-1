@@ -33,22 +33,11 @@ const startCasting = async (device) => {
         const { device_name, device_ip, url, x1, x2, y1, y2 } = device;
         console.log("Casting to device:", device_name);
         
-
         let res = await ping.promise.probe(device_ip);
         console.log("alive : ", res.alive);
-        if(!res.alive) return "Devie not found on network"; 
-        console.log("alive after : ", res.alive);
-
-
-        // let scaleFactorParams = "";
-        // if (x1 && x2 && y1 && y2) {
-        //     const scaleParams = calculateScaleParams(x1, x2, y1, y2);
-        //     scaleFactorParams = `&scalex=${scaleParams.scalex}&scaley=${scaleParams.scaley}&originx=${scaleParams.originx}&originy=${scaleParams.originy}&rotate=0`;
-        // }
+        if (!res.alive) return "Device not found on network"; 
 
         let finalUrl = url;
-        // finalUrl += `?${scaleFactorParams}&cast=true`;
-
         const deviceObject = new nodecastor.CastDevice({
             friendlyName: device_name,
             name: device_name,
@@ -117,48 +106,32 @@ const stopCasting = async (device) => {
         if(!res.alive) return "Device not found on network";
 
         const client = new Client();
-        client.connect(device_ip, () => {
-            client.launch(DefaultMediaReceiver, (err) => { // Default Media Receiver ID
-                if (err) {
-                    console.error("Launch error:", err);
-                    return;
-                }
-                console.log("Stopped casting to device:", device.device_name);
-                client.close();
+        await new Promise((resolve, reject) => {
+            client.connect(device_ip, () => {
+                client.launch(DefaultMediaReceiver, (err) => { // Default Media Receiver ID
+                    if (err) {
+                        console.error("Launch error:", err);
+                        reject(err);
+                        return;
+                    }
+                    console.log("Stopped casting to device:", device.device_name);
+                    client.close();
+                    resolve();
+                });
             });
-        });
-        client.on("error", (err) => {
-            console.error("Error occurred for stopping the casting:", err);
+            client.on("error", (err) => {
+                console.error("Error occurred for stopping the casting:", err);
+                reject(err);
+            });
         });
     } catch (error) {
         console.error("Stop casting error:", error);
     }
 };
 
-
-const calculateScaleParams = (x1, x2, y1, y2) => {
-    const scalex = 1 / (x2 - x1);
-    const scaley = 1 / (y2 - y1);
-    const originx = (scalex * x1) / (scalex - 1);
-    const originy = (scaley * y1) / (scaley - 1);
-    return { scalex, scaley, originx, originy };
-};
-
-const sendCasterStatus = (status) => {
-    // Implement sendCasterStatus function
-};
-
-const sendDeviceStatus = (status) => {
-    // Implement sendDeviceStatus function
-};
-
-const continueProcessing = () => {
-    // Implement continueProcessing function
-};
-
 const onNextHandler = () => {
-    
-}
+    // Implement onNextHandler
+};
 
 // Main
 setupRSocketClient();
@@ -174,7 +147,6 @@ client.connect().subscribe({
             onComplete: () => console.log("Complete"),
             onError: (error) => {
                 console.error("Error occurred:", error);
-                continueProcessing();
             },
             onNext: async (payload) => {
                 const dataObj = JSON.parse(payload.data);
@@ -182,21 +154,17 @@ client.connect().subscribe({
                 console.log("Cast status:", dataObj.castStatus);
                 if (dataObj[0]?.castStatus === "StopCast") {
                     console.log("Stopping cast");
-                    stopCasting(JSON.parse(payload.data));
+                    await stopCasting(JSON.parse(payload.data));
+                    console.log("Start casting after stop");
+                    for (let i = 0; i < dataObj.length; i++) {
+                        console.log("Starting cast");
+                        await startCasting(dataObj[i]);
+                    }
                 } else {
-
-                  for(let i=0; i<dataObj.length; i++) {
                     console.log("Starting cast");
-                    stopCasting(dataObj[i])
-                    // let res = startCasting(dataObj[i]);
-                  //   console.log(res);
-                  }
-
-                  for(let i=0; i<dataObj.length; i++) {
-                      console.log("Starting cast");
-                    //   stopCasting(dataObj[i])
-                      let res = startCasting(dataObj[i]);
-                    //   console.log(res);
+                    for (let i = 0; i < dataObj.length; i++) {
+                        await stopCasting(dataObj[i]);
+                        await startCasting(dataObj[i]);
                     }
                 }
             },
@@ -207,7 +175,6 @@ client.connect().subscribe({
     },
     onError: (error) => {
         console.error("Connection error:", error);
-        continueProcessing();
     },
     onSubscribe: (cancel) => {
         /* call cancel() to abort */
