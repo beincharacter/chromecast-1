@@ -16,6 +16,7 @@
     "multicast-dns": "^7.2.4",
     "node-wifi": "^2.0.16",
     "nodecastor": "^0.1.9",
+    "nodemon": "^3.1.0",
     "ping": "^0.4.4",
     "rsocket-core": "^0.0.27",
     "rsocket-flowable": "^0.0.27",
@@ -36,7 +37,7 @@
   },
   "scripts": {
     "test": "node getDevices.js",
-    "start": "node getDevices.js"
+    "start": "nodemon getDevices.js"
   },
   "repository": {
     "type": "git",

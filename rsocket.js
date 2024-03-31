@@ -40,14 +40,14 @@ const startCasting = async (device) => {
         console.log("alive after : ", res.alive);
 
 
-        let scaleFactorParams = "";
-        if (x1 && x2 && y1 && y2) {
-            const scaleParams = calculateScaleParams(x1, x2, y1, y2);
-            scaleFactorParams = `&scalex=${scaleParams.scalex}&scaley=${scaleParams.scaley}&originx=${scaleParams.originx}&originy=${scaleParams.originy}&rotate=0`;
-        }
+        // let scaleFactorParams = "";
+        // if (x1 && x2 && y1 && y2) {
+        //     const scaleParams = calculateScaleParams(x1, x2, y1, y2);
+        //     scaleFactorParams = `&scalex=${scaleParams.scalex}&scaley=${scaleParams.scaley}&originx=${scaleParams.originx}&originy=${scaleParams.originy}&rotate=0`;
+        // }
 
         let finalUrl = url;
-        finalUrl += `?${scaleFactorParams}&cast=true`;
+        // finalUrl += `?${scaleFactorParams}&cast=true`;
 
         const deviceObject = new nodecastor.CastDevice({
             friendlyName: device_name,
@@ -107,30 +107,34 @@ const startCasting = async (device) => {
 
 };
 
-const stopCasting = (devices) => {
+const stopCasting = async (device) => {
     console.log("Stopping casting");
     try {
-        devices.forEach((device) => {
-            const { device_ip } = device;
-            const client = new Client();
-            client.connect(device_ip, () => {
-                client.launch(DefaultMediaReceiver, (err) => {
-                    if (err) {
-                        console.error("Launch error:", err);
-                        return;
-                    }
-                    console.log("Stopped casting to device:", device.device_name);
-                    client.close();
-                });
+        const { device_ip } = device;    
+
+        let res = await ping.promise.probe(device_ip);
+        console.log("alive : ", res.alive);
+        if(!res.alive) return "Device not found on network";
+
+        const client = new Client();
+        client.connect(device_ip, () => {
+            client.launch(DefaultMediaReceiver, (err) => { // Default Media Receiver ID
+                if (err) {
+                    console.error("Launch error:", err);
+                    return;
+                }
+                console.log("Stopped casting to device:", device.device_name);
+                client.close();
             });
-            client.on("error", (err) => {
-                console.error("Error occurred for stopping the casting:", err);
-            });
+        });
+        client.on("error", (err) => {
+            console.error("Error occurred for stopping the casting:", err);
         });
     } catch (error) {
         console.error("Stop casting error:", error);
     }
 };
+
 
 const calculateScaleParams = (x1, x2, y1, y2) => {
     const scalex = 1 / (x2 - x1);
@@ -164,7 +168,7 @@ client.connect().subscribe({
         console.log("Connected");
         socket.fireAndForget({});
         socket.requestStream({
-            data: { streamId: "COMMAND", type: "COMMAND", component: "COMMAND" },
+            data: { streamId: "COMMAND", type: "COMMAND", component: "COMMAND" },   
             metadata: "STREAM_REQUEST",
         }).subscribe({
             onComplete: () => console.log("Complete"),
@@ -180,10 +184,19 @@ client.connect().subscribe({
                     console.log("Stopping cast");
                     stopCasting(JSON.parse(payload.data));
                 } else {
+
+                  for(let i=0; i<dataObj.length; i++) {
+                    console.log("Starting cast");
+                    stopCasting(dataObj[i])
+                    // let res = startCasting(dataObj[i]);
+                  //   console.log(res);
+                  }
+
                   for(let i=0; i<dataObj.length; i++) {
                       console.log("Starting cast");
+                    //   stopCasting(dataObj[i])
                       let res = startCasting(dataObj[i]);
-                      console.log(res);
+                    //   console.log(res);
                     }
                 }
             },
