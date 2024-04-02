@@ -33,14 +33,9 @@ const startCasting = async (device) => {
         const { device_name, device_ip, url, x1, x2, y1, y2 } = device;
         console.log("Casting to device:", device_name);
         
-
         let res = await ping.promise.probe(device_ip);
         console.log("alive : ", res.alive);
-        if(!res.alive) return "Devie not found on network"; 
-        console.log("alive after : ", res.alive);
-
-
-        let scaleFactorParams = "";
+        if (!res.alive) return "Device not found on network"; // let scaleFactorParams = "";
         if (x1 && x2 && y1 && y2) {
             const scaleParams = calculateScaleParams(x1, x2, y1, y2);
             scaleFactorParams = `&scalex=${scaleParams.scalex}&scaley=${scaleParams.scaley}&originx=${scaleParams.originx}&originy=${scaleParams.originy}&rotate=0`;
@@ -49,6 +44,7 @@ const startCasting = async (device) => {
         let finalUrl = url;
         finalUrl += `?${scaleFactorParams}&cast=true`;
 
+        console.log("final url ,", finalUrl)
         const deviceObject = new nodecastor.CastDevice({
             friendlyName: device_name,
             name: device_name,
@@ -107,24 +103,32 @@ const startCasting = async (device) => {
 
 };
 
-const stopCasting = (devices) => {
+const stopCasting = async (device) => {
     console.log("Stopping casting");
     try {
-        devices.forEach((device) => {
-            const { device_ip } = device;
-            const client = new Client();
+        const { device_ip } = device;    
+
+        let res = await ping.promise.probe(device_ip);
+        console.log("alive : ", res.alive);
+        if(!res.alive) return "Device not found on network";
+
+        const client = new Client();
+        await new Promise((resolve, reject) => {
             client.connect(device_ip, () => {
                 client.launch(DefaultMediaReceiver, (err) => {
                     if (err) {
                         console.error("Launch error:", err);
+                        reject(err);
                         return;
                     }
                     console.log("Stopped casting to device:", device.device_name);
                     client.close();
+                    resolve();
                 });
             });
             client.on("error", (err) => {
                 console.error("Error occurred for stopping the casting:", err);
+                reject(err);
             });
         });
     } catch (error) {
@@ -132,29 +136,51 @@ const stopCasting = (devices) => {
     }
 };
 
+const roundToNearest = (number, decimalPlaces) => {
+    const factor = Math.pow(10, decimalPlaces);
+    return (Math.round(number * factor) / factor).toFixed(decimalPlaces);
+  }
+
 const calculateScaleParams = (x1, x2, y1, y2) => {
-    const scalex = 1 / (x2 - x1);
-    const scaley = 1 / (y2 - y1);
-    const originx = (scalex * x1) / (scalex - 1);
-    const originy = (scaley * y1) / (scaley - 1);
+    
+    var x2 = parseFloat(x2) / 100;
+    var x1 = parseFloat(x1) / 100;
+    var y1 = parseFloat(y1) / 100;
+    var y2 = parseFloat(y2) / 100;
+    
+    var minusX = x2 - x1;
+    var scalex = 1 / minusX;
+    var scalexMinus = scalex - 1;
+    if (scalexMinus === 0) {
+      scalexMinus = 1;
+    }
+
+    var minusY = y2 - y1;
+    var scaley = 1 / minusY;
+    var scaleyMinus = scaley - 1;
+    if (scaleyMinus === 0) {
+      scaleyMinus = 1;
+    }
+
+    var originx = ((scalex * x1) / scalexMinus) * 100;
+    var originy = ((scaley * y1) / scaleyMinus) * 100;
+    scalex = roundToNearest(scalex, 2);
+    scaley = roundToNearest(scaley, 2);
+    originx = roundToNearest(originx, 2);
+    originy = roundToNearest(originy, 2);
+
+    console.log(
+      "scalex : ",
+      scalex,
+      " scaley : ",
+      scaley,
+      " originx ; ",
+      originx,
+      " originy : ",
+      originy
+    );
     return { scalex, scaley, originx, originy };
 };
-
-const sendCasterStatus = (status) => {
-    // Implement sendCasterStatus function
-};
-
-const sendDeviceStatus = (status) => {
-    // Implement sendDeviceStatus function
-};
-
-const continueProcessing = () => {
-    // Implement continueProcessing function
-};
-
-const onNextHandler = () => {
-    
-}
 
 // Main
 setupRSocketClient();
@@ -164,26 +190,28 @@ client.connect().subscribe({
         console.log("Connected");
         socket.fireAndForget({});
         socket.requestStream({
-            data: { streamId: "COMMAND", type: "COMMAND", component: "COMMAND" },
+            data: { streamId: "COMMAND", type: "COMMAND", component: "COMMAND" },   
             metadata: "STREAM_REQUEST",
         }).subscribe({
             onComplete: () => console.log("Complete"),
             onError: (error) => {
                 console.error("Error occurred:", error);
-                continueProcessing();
             },
             onNext: async (payload) => {
                 const dataObj = JSON.parse(payload.data);
                 console.log("Triggered data:", dataObj.length);
                 console.log("Cast status:", dataObj.castStatus);
                 if (dataObj[0]?.castStatus === "StopCast") {
-                    console.log("Stopping cast");
-                    stopCasting(JSON.parse(payload.data));
+                    
+                    for (let i = 0; i < dataObj.length; i++) {
+                        await stopCasting(dataObj[i]);
+                    }
+
                 } else {
-                  for(let i=0; i<dataObj.length; i++) {
-                      console.log("Starting cast");
-                      let res = startCasting(dataObj[i]);
-                      console.log(res);
+                    console.log("Starting cast");
+                    for (let i = 0; i < dataObj.length; i++) {
+                        await stopCasting(dataObj[i]);
+                        await startCasting(dataObj[i]);
                     }
                 }
             },
@@ -194,7 +222,6 @@ client.connect().subscribe({
     },
     onError: (error) => {
         console.error("Connection error:", error);
-        continueProcessing();
     },
     onSubscribe: (cancel) => {
         /* call cancel() to abort */
