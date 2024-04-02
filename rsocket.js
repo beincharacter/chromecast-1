@@ -35,9 +35,16 @@ const startCasting = async (device) => {
         
         let res = await ping.promise.probe(device_ip);
         console.log("alive : ", res.alive);
-        if (!res.alive) return "Device not found on network"; 
+        if (!res.alive) return "Device not found on network"; // let scaleFactorParams = "";
+        if (x1 && x2 && y1 && y2) {
+            const scaleParams = calculateScaleParams(x1, x2, y1, y2);
+            scaleFactorParams = `&scalex=${scaleParams.scalex}&scaley=${scaleParams.scaley}&originx=${scaleParams.originx}&originy=${scaleParams.originy}&rotate=0`;
+        }
 
         let finalUrl = url;
+        finalUrl += `?${scaleFactorParams}&cast=true`;
+
+        console.log("final url ,", finalUrl)
         const deviceObject = new nodecastor.CastDevice({
             friendlyName: device_name,
             name: device_name,
@@ -108,7 +115,7 @@ const stopCasting = async (device) => {
         const client = new Client();
         await new Promise((resolve, reject) => {
             client.connect(device_ip, () => {
-                client.launch(DefaultMediaReceiver, (err) => { // Default Media Receiver ID
+                client.launch(DefaultMediaReceiver, (err) => {
                     if (err) {
                         console.error("Launch error:", err);
                         reject(err);
@@ -129,8 +136,50 @@ const stopCasting = async (device) => {
     }
 };
 
-const onNextHandler = () => {
-    // Implement onNextHandler
+const roundToNearest = (number, decimalPlaces) => {
+    const factor = Math.pow(10, decimalPlaces);
+    return (Math.round(number * factor) / factor).toFixed(decimalPlaces);
+  }
+
+const calculateScaleParams = (x1, x2, y1, y2) => {
+    
+    var x2 = parseFloat(x2) / 100;
+    var x1 = parseFloat(x1) / 100;
+    var y1 = parseFloat(y1) / 100;
+    var y2 = parseFloat(y2) / 100;
+    
+    var minusX = x2 - x1;
+    var scalex = 1 / minusX;
+    var scalexMinus = scalex - 1;
+    if (scalexMinus === 0) {
+      scalexMinus = 1;
+    }
+
+    var minusY = y2 - y1;
+    var scaley = 1 / minusY;
+    var scaleyMinus = scaley - 1;
+    if (scaleyMinus === 0) {
+      scaleyMinus = 1;
+    }
+
+    var originx = ((scalex * x1) / scalexMinus) * 100;
+    var originy = ((scaley * y1) / scaleyMinus) * 100;
+    scalex = roundToNearest(scalex, 2);
+    scaley = roundToNearest(scaley, 2);
+    originx = roundToNearest(originx, 2);
+    originy = roundToNearest(originy, 2);
+
+    console.log(
+      "scalex : ",
+      scalex,
+      " scaley : ",
+      scaley,
+      " originx ; ",
+      originx,
+      " originy : ",
+      originy
+    );
+    return { scalex, scaley, originx, originy };
 };
 
 // Main
@@ -153,13 +202,11 @@ client.connect().subscribe({
                 console.log("Triggered data:", dataObj.length);
                 console.log("Cast status:", dataObj.castStatus);
                 if (dataObj[0]?.castStatus === "StopCast") {
-                    console.log("Stopping cast");
-                    await stopCasting(JSON.parse(payload.data));
-                    console.log("Start casting after stop");
+                    
                     for (let i = 0; i < dataObj.length; i++) {
-                        console.log("Starting cast");
-                        await startCasting(dataObj[i]);
+                        await stopCasting(dataObj[i]);
                     }
+
                 } else {
                     console.log("Starting cast");
                     for (let i = 0; i < dataObj.length; i++) {

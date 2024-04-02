@@ -37,7 +37,8 @@
   },
   "scripts": {
     "test": "node getDevices.js",
-    "start": "nodemon getDevices.js"
+    "start": "nodemon getDevices.js",
+    "watch": "nodemon rsocket.js"
   },
   "repository": {
     "type": "git",
