@@ -199,7 +199,7 @@ client.connect().subscribe({
             },
             onNext: async (payload) => {
                 const dataObj = JSON.parse(payload.data);
-                console.log("Triggered data:", dataObj.length);
+                console.log("Triggered data:", dataObj);
                 console.log("Cast status:", dataObj.castStatus);
                 if (dataObj[0]?.castStatus === "StopCast") {
                     
