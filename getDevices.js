@@ -4,8 +4,9 @@ const mdns_js = require("mdns-js");
 const wifi = require("node-wifi");
 const axios = require("axios");
 
-const device_schema_id = "65f95d08808f4c17488b6588";
-const network_schema_id = "63f5c412e6edae00011ed2d0";
+const device_schema_id = "65fd1d937bd0d166a1817056";
+const network_schema_id = "65fd18117bd0d166a1817052";
+const token = "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImZmOGYxNjhmLTNmZjYtNDZlMi1iMTJlLWE2YTdlN2Y2YTY5MCJ9.eyJwcm9maWxlVXJsIjoid3d3Lmdvb2dsZS5jb20vaW1hZ2VzL2F2aW5hc2gtcGF0ZWwtcm9ja3oiLCJyZWNlbnRfc2Vzc2lvbiI6Ik5BIiwic3ViIjoiZ2FpYW4uY29tIiwicGFyZW50VGVuYW50SWQiOiJOQSIsImNvbG9yIjpudWxsLCJ1c2VyX25hbWUiOiJtb2JpbGUxMEBnYXRlc3RhdXRvbWF0aW9uLmNvbSIsImlzcyI6ImdhaWFuLmNvbSIsImlzQWRtaW4iOnRydWUsInBsYXRmb3JtSWQiOiI2NWNmMGU1MWMzNGZmYjA3ZDg1NTQ4YWUiLCJ1c2VyTmFtZSI6Im1vYmlsZTEwQGdhdGVzdGF1dG9tYXRpb24uY29tIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9NQVJLRVRQTEFDRV9VU0VSIl0sImNsaWVudF9pZCI6ImdhaWFuIiwic2NvcGUiOlsidHJ1c3QiLCJyZWFkIiwid3JpdGUiXSwidGVuYW50SWQiOiI2NWNmMGJkNzlkNTU0MjAwMDFhYTdjMjIiLCJsb2dvIjoid3d3Lmdvb2dsZS5jb20vaW1hZ2VzLiIsImV4cCI6MTcwODExMjEyMiwianRpIjoiYzM1NDdlYjUtMGY3Yi00YWMyLTg4ZDgtMTI1YzY0ZDcxOTgzIiwiZW1haWwiOiJtaWFzdGVzdGVudkBnYXRlc3RhdXRvbWF0aW9uLmNvbSJ9.i-I_6i_I6r8_fWAf0d-uZEZxxcFfcOjheYApaN9PRZx7OhFd0mw-GTlbjRgVyQK2Nm5cVfNt6KdXM7elm3rS1MPJOPZqr5n6fmh7Jg1vo8i4b0gyNT5N3XxVNMUQATK2sZsPZFOS1p6hZzE2kZ4mtvuXgxGtHpbSNhzgf7iShBFFGD-pUBQ3DRYM5BkbkORpgzyizgA0Qd0LOiLMJKrasjnGtNUfDcHHTd6YTfkSIA649YNDh5sWKl2CbD5UkIJie7m8roLl3Ipuu4At8Y5qlgh14XaU5jXrCV-Uy7Ze8TQyWEqYD07RQZb0E3KrndjQojG8WS3IM5yBOLAI3fsWMQeyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImZmOGYxNjhmLTNmZjYtNDZlMi1iMTJlLWE2YTdlN2Y2YTY5MCJ9.eyJwcm9maWxlVXJsIjoid3d3Lmdvb2dsZS5jb20vaW1hZ2VzL2F2aW5hc2gtcGF0ZWwtcm9ja3oiLCJyZWNlbnRfc2Vzc2lvbiI6Ik5BIiwic3ViIjoiZ2FpYW4uY29tIiwicGFyZW50VGVuYW50SWQiOiJOQSIsImNvbG9yIjpudWxsLCJ1c2VyX25hbWUiOiJtb2JpbGUxMEBnYXRlc3RhdXRvbWF0aW9uLmNvbSIsImlzcyI6ImdhaWFuLmNvbSIsImlzQWRtaW4iOnRydWUsInBsYXRmb3JtSWQiOiI2NWNmMGU1MWMzNGZmYjA3ZDg1NTQ4YWUiLCJ1c2VyTmFtZSI6Im1vYmlsZTEwQGdhdGVzdGF1dG9tYXRpb24uY29tIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9NQVJLRVRQTEFDRV9VU0VSIl0sImNsaWVudF9pZCI6ImdhaWFuIiwic2NvcGUiOlsidHJ1c3QiLCJyZWFkIiwid3JpdGUiXSwidGVuYW50SWQiOiI2NWNmMGJkNzlkNTU0MjAwMDFhYTdjMjIiLCJsb2dvIjoid3d3Lmdvb2dsZS5jb20vaW1hZ2VzLiIsImV4cCI6MTcwODExMjEyMiwianRpIjoiYzM1NDdlYjUtMGY3Yi00YWMyLTg4ZDgtMTI1YzY0ZDcxOTgzIiwiZW1haWwiOiJtaWFzdGVzdGVudkBnYXRlc3RhdXRvbWF0aW9uLmNvbSJ9.i-I_6i_I6r8_fWAf0d-uZEZxxcFfcOjheYApaN9PRZx7OhFd0mw-GTlbjRgVyQK2Nm5cVfNt6KdXM7elm3rS1MPJOPZqr5n6fmh7Jg1vo8i4b0gyNT5N3XxVNMUQATK2sZsPZFOS1p6hZzE2kZ4mtvuXgxGtHpbSNhzgf7iShBFFGD-pUBQ3DRYM5BkbkORpgzyizgA0Qd0LOiLMJKrasjnGtNUfDcHHTd6YTfkSIA649YNDh5sWKl2CbD5UkIJie7m8roLl3Ipuu4At8Y5qlgh14XaU5jXrCV-Uy7Ze8TQyWEqYD07RQZb0E3KrndjQojG8WS3IM5yBOLAI3fsWMQ";
 let previousWifiDetails = {};
 let wifi_details = {};
 const foundedDevices = [];
@@ -45,29 +46,27 @@ async function wifiDiscovery() {
               newWifiDetails.wifi_name,
               newWifiDetails.wifi_id
             )
-              .then(async (res) => {
-                if (res.data.entities && res.data.entities.length > 0) {
-                  console.log("Network Already Existed");
-                  return;
-                }
+            .then(async (res) => {
+              if (res.data.entities && res.data.entities.length > 0) {
+                console.log("Network Already Existed");
+                return;
+              }
 
-                await network_post(
-                  newWifiDetails.wifi_name,
-                  newWifiDetails.wifi_id
-                )
-                  .then((res) => {
-                    // console.log("Response In Network Posting : ", res.data);
-                  })
-                  .catch((error) => {
-                    console.log("Error In Network Posting : ", error);
-                  });
-              })
-              .catch((error) => {
-                console.log("Error In Network Checking : ", "error");
+              await network_post(
+                newWifiDetails.wifi_name,
+                newWifiDetails.wifi_id
+              ).then((res) => {
+                console.log("Response In Network Posting : ", res.data.status); 
+              }).catch((error) => {
+                console.log("Error In Network Posting : ", error);
               });
+            }).catch((error) => {
+              console.log("Error In Network Checking : ", error.message);
+            });
           } catch (error) {
             console.log("Error : ", error);
           }
+
 
           wifi_details = newWifiDetails;
           previousWifiDetails = newWifiDetails;
@@ -122,13 +121,9 @@ async function deviceDiscovery() {
 
             // Post device details
             try {
-              await device_post({
-                "caster_id": wifi_details.wifi_id,
-                "device_ip": ipAddress,
-                "device_name": deviceName
-              })
+              await device_post(wifi_details.wifi_id, ipAddress, deviceName)
               .then((response) => {
-                console.log("Device Post Response : ", response.data);
+                console.log("Device Post Response : ", response.data.status);
               })
               .catch((error) => {
                 console.log("Device Post Error : ", error.message);
@@ -158,12 +153,17 @@ function txtIttr(txtArray) {
 }
 
 // Check network details
-function network_check(name, ip) {
+async function network_check(name, ip) {
   console.log("Inside Check Network Post Details");
   const network_check_api = `https://ig.aidtaas.com/tf-entity-ingestion/v1.0/schemas/${network_schema_id}/instances/list`;
 
   return axios.post(network_check_api, {
-    casterId: ip,
+    caster_id: ip
+  }, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token
+    }
   });
 }
 
@@ -173,25 +173,44 @@ function network_post(name, ip) {
   const network_post_api = `https://ig.aidtaas.com/tf-entity-ingestion/v1.0/schemas/${network_schema_id}/instance?upsert=false`;
 
   return axios.post(network_post_api, {
-    casterId: ip,
-    networkName: name,
-    state: "active",
+    caster_id: ip,
+    network_name: name,
+    state: "active"
+  }, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token
+    }
   });
 }
 
 // Posting device details
-function device_post(obj) {
-  console.log("Device Data : ", obj);
+function device_post(wifi_id, ipAddress, deviceName) {
+  console.log("Device Data : ", wifi_details.wifi_id, ipAddress, deviceName);
   const device_post_api = `https://ig.aidtaas.com/tf-entity-ingestion/v1.0/schemas/${device_schema_id}/instance`;
-  return axios.post(device_post_api, obj);
+  
+  return axios.post(device_post_api, {
+    "caster_id": wifi_id,
+    "chromecastDeviceName": deviceName,
+    "chromecastDeviceId": ipAddress
+  }, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token
+    }
+  });
 }
 
 // Delete all devices of a given network
 function deleteDevicesOfThisNetwork(macId) {
   const device_delete_api = `https://ig.aidtaas.com/tf-entity-ingestion/v1.0/schemas/${device_schema_id}/instances`;
   return axios.delete(device_delete_api, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token
+    },
     data: {
-      casterId: macId,
+      caster_id: macId,
     },
   });
 }
