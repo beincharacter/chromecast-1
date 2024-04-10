@@ -1,53 +1,21 @@
 {
-  "name": "chromecasts",
-  "version": "1.10.2",
-  "description": "Query your local network for Chromecasts and have them play media",
-  "main": "index.js",
+  "name": "renderchromecast",
+  "version": "1.0.0",
+  "description": "",
+  "main": "socket.js",
+  "scripts": {
+    "start": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "axios": "^1.3.3",
     "castv2-client": "^1.2.0",
-    "chromecast-api": "^0.4.2",
-    "debug": "^2.1.3",
-    "dns-txt": "^2.0.2",
-    "events": "^3.3.0",
-    "http": "0.0.1-security",
-    "mdns-js": "^1.0.3",
-    "mime": "^1.3.4",
-    "multicast-dns": "^7.2.4",
-    "node-wifi": "^2.0.16",
+    "express": "^4.19.2",
     "nodecastor": "^0.1.9",
     "nodemon": "^3.1.0",
     "ping": "^0.4.4",
-    "rsocket-core": "^0.0.27",
-    "rsocket-flowable": "^0.0.27",
-    "rsocket-tcp-client": "^0.0.27",
-    "rsocket-tcp-server": "^0.0.27",
-    "rsocket-types": "^0.0.27",
-    "rsocket-websocket-client": "^0.0.27",
-    "rsocket-websocket-server": "^0.0.27",
-    "simple-get": "^2.0.0",
-    "thunky": "^0.1.0",
-    "url": "^0.11.0"
-  },
-  "optionalDependencies": {
-    "node-ssdp": "^2.9.1"
-  },
-  "devDependencies": {
-    "standard": "*"
-  },
-  "scripts": {
-    "test": "node getDevices.js",
-    "start": "nodemon getDevices.js",
-    "watch": "nodemon rsocket.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/mafintosh/chromecasts.git"
-  },
-  "author": "Mathias Buus (@mafintosh)",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/mafintosh/chromecasts/issues"
-  },
-  "homepage": "https://github.com/mafintosh/chromecasts"
+    "rsocket-core": "^0.0.29-alpha.0",
+    "rsocket-tcp-client": "^0.0.29-alpha.0"
+  }
 }

@@ -1,32 +1,7 @@
-const { RSocketClient, JsonSerializer, IdentitySerializer } = require("rsocket-core");
-const RSocketTcpClient = require("rsocket-tcp-client").default;
 const nodecastor = require("nodecastor");
 const { Client } = require("castv2-client");
 const { DefaultMediaReceiver } = require("castv2-client");
 const ping = require("ping");
-
-const CAST_APP_ID = "5CB45E5A";
-
-let client = undefined;
-
-const setupRSocketClient = () => {
-    client = new RSocketClient({
-        serializers: {
-            data: JsonSerializer,
-            metadata: IdentitySerializer,
-        },
-        setup: {
-            keepAlive: 6000000,
-            lifetime: 18000000,
-            dataMimeType: "application/json",
-            metadataMimeType: "message/x.rsocket.routing.v0",
-        },
-        transport: new RSocketTcpClient({
-            host: "192.168.28.11",
-            port: 7000,
-        }),
-    });
-};
 
 const startCasting = async (device) => {
     try {
@@ -35,7 +10,9 @@ const startCasting = async (device) => {
         
         let res = await ping.promise.probe(device_ip);
         console.log("alive : ", res.alive);
-        if (!res.alive) return "Device not found on network"; // let scaleFactorParams = "";
+        if (!res.alive) return "Device not found on network"; 
+        
+        let scaleFactorParams = "";
         if (x1 && x2 && y1 && y2) {
             const scaleParams = calculateScaleParams(x1, x2, y1, y2);
             scaleFactorParams = `&scalex=${scaleParams.scalex}&scaley=${scaleParams.scaley}&originx=${scaleParams.originx}&originy=${scaleParams.originy}&rotate=0`;
@@ -65,7 +42,7 @@ const startCasting = async (device) => {
                     }
 
                     try {
-                        deviceObject.application(CAST_APP_ID, (err, application) => {
+                        deviceObject.application("5CB45E5A", (err, application) => {
                             if (err) {
                                 console.error("Application error:", err);
                                 reject(err);
@@ -182,48 +159,4 @@ const calculateScaleParams = (x1, x2, y1, y2) => {
     return { scalex, scaley, originx, originy };
 };
 
-// Main
-setupRSocketClient();
-
-client.connect().subscribe({
-    onComplete: (socket) => {
-        console.log("Connected");
-        socket.fireAndForget({});
-        socket.requestStream({
-            data: { streamId: "COMMAND", type: "COMMAND", component: "COMMAND" },   
-            metadata: "STREAM_REQUEST",
-        }).subscribe({
-            onComplete: () => console.log("Complete"),
-            onError: (error) => {
-                console.error("Error occurred:", error);
-            },
-            onNext: async (payload) => {
-                const dataObj = JSON.parse(payload.data);
-                console.log("Triggered data:", dataObj);
-                console.log("Cast status:", dataObj.castStatus);
-                if (dataObj[0]?.castStatus === "StopCast") {
-                    
-                    for (let i = 0; i < dataObj.length; i++) {
-                        await stopCasting(dataObj[i]);
-                    }
-
-                } else {
-                    console.log("Starting cast");
-                    for (let i = 0; i < dataObj.length; i++) {
-                        await stopCasting(dataObj[i]);
-                        await startCasting(dataObj[i]);
-                    }
-                }
-            },
-            onSubscribe: (subscription) => {
-                subscription.request(2147483647);
-            },
-        });
-    },
-    onError: (error) => {
-        console.error("Connection error:", error);
-    },
-    onSubscribe: (cancel) => {
-        /* call cancel() to abort */
-    },
-});
+module.exports = { startCasting, stopCasting, roundToNearest, calculateScaleParams };
